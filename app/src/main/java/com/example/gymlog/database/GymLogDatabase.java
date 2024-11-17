@@ -1,4 +1,4 @@
-package com.example.gymlog.Database;
+package com.example.gymlog.database;
 
 import android.content.Context;
 import android.util.Log;
@@ -7,17 +7,22 @@ import androidx.annotation.NonNull;
 import androidx.room.Database;
 import androidx.room.Room;
 import androidx.room.RoomDatabase;
+import androidx.room.TypeConverters;
 import androidx.sqlite.db.SupportSQLiteDatabase;
 
-import com.example.gymlog.Database.entities.GymLog;
+import com.example.gymlog.database.entities.GymLog;
 import com.example.gymlog.MainActivity;
+import com.example.gymlog.database.entities.User;
+import com.example.gymlog.database.typeConverter.LocalDateTypeConverter;
 
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-@Database(entities =  {GymLog.class}, version = 1, exportSchema = false)
+@TypeConverters(LocalDateTypeConverter.class)
+@Database(entities =  {GymLog.class, User.class}, version = 1, exportSchema = false)
 public abstract class GymLogDatabase extends RoomDatabase {
-    private static final String DATABASE_NAME = "GymLog_database"
+    public static final String USER_TABLE = "userTable";
+    private static final String DATABASE_NAME = "GymLogDatabase";
 
     public static final String GYM_LOG_TABLE = "gymLogTable";
 
@@ -48,9 +53,19 @@ public abstract class GymLogDatabase extends RoomDatabase {
         public void onCreate(@NonNull SupportSQLiteDatabase db){
             super.onCreate(db);
             Log.i(MainActivity.TAG, "DATABASE created");
-            //TODO: vid 3
+            databaseWriteExecutor.execute(() -> {
+                UserDAO dao = INSTANCE.userDAO();
+                dao.deleteAll();
+                User admin = new User("admin1","admin1");
+                admin.setAdmin(true);
+                dao.insert(admin);
+                User testUser1 = new User("testUser1","testUser1");
+                dao.insert((testUser1));
+            });
         }
     };
 
     public abstract GymLogDAO gymLogDAO();
+
+    public abstract UserDAO userDAO();
 }
